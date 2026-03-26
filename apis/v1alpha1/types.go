@@ -27,3 +27,474 @@ var (
 	_ = &aws.JSONValue{}
 	_ = ackv1alpha1.AWSAccountID("")
 )
+
+// Contains aggregated scan results across multiple scan operations, providing
+// a summary of scan status and findings.
+type AggregatedScanResult struct {
+	FailedScan   *bool        `json:"failedScan,omitempty"`
+	LastComputed *metav1.Time `json:"lastComputed,omitempty"`
+}
+
+// This is a summary of jobs created or running within the most recent 30 days.
+//
+// The returned summary may contain the following: Region, Account, State, RestourceType,
+// MessageCategory, StartTime, EndTime, and Count of included jobs.
+type BackupJobSummary struct {
+	EndTime   *metav1.Time `json:"endTime,omitempty"`
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+}
+
+// Contains DeleteAt and MoveToColdStorageAt timestamps, which are used to specify
+// a lifecycle for a recovery point.
+//
+// The lifecycle defines when a protected resource is transitioned to cold storage
+// and when it expires. Backup transitions and expires backups automatically
+// according to the lifecycle that you define.
+//
+// Backups transitioned to cold storage must be stored in cold storage for a
+// minimum of 90 days. Therefore, the “retention” setting must be 90 days
+// greater than the “transition to cold after days” setting. The “transition
+// to cold after days” setting cannot be changed after a backup has been transitioned
+// to cold.
+//
+// Resource types that can transition to cold storage are listed in the Feature
+// availability by resource (https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-feature-availability.html#features-by-resource)
+// table. Backup ignores this expression for other resource types.
+type CalculatedLifecycle struct {
+	DeleteAt            *metav1.Time `json:"deleteAt,omitempty"`
+	MoveToColdStorageAt *metav1.Time `json:"moveToColdStorageAt,omitempty"`
+}
+
+// The details of the copy operation.
+type CopyAction struct {
+	DestinationBackupVaultARN *string `json:"destinationBackupVaultARN,omitempty"`
+}
+
+// Contains detailed information about a copy job.
+type CopyJob struct {
+	BackupSizeInBytes           *int64       `json:"backupSizeInBytes,omitempty"`
+	CompletionDate              *metav1.Time `json:"completionDate,omitempty"`
+	CompositeMemberIdentifier   *string      `json:"compositeMemberIdentifier,omitempty"`
+	CopyJobID                   *string      `json:"copyJobID,omitempty"`
+	CreatedByBackupJobID        *string      `json:"createdByBackupJobID,omitempty"`
+	CreationDate                *metav1.Time `json:"creationDate,omitempty"`
+	DestinationBackupVaultARN   *string      `json:"destinationBackupVaultARN,omitempty"`
+	DestinationEncryptionKeyARN *string      `json:"destinationEncryptionKeyARN,omitempty"`
+	DestinationRecoveryPointARN *string      `json:"destinationRecoveryPointARN,omitempty"`
+	DestinationVaultLockState   *string      `json:"destinationVaultLockState,omitempty"`
+	DestinationVaultType        *string      `json:"destinationVaultType,omitempty"`
+	IsParent                    *bool        `json:"isParent,omitempty"`
+	MessageCategory             *string      `json:"messageCategory,omitempty"`
+	NumberOfChildJobs           *int64       `json:"numberOfChildJobs,omitempty"`
+	ParentJobID                 *string      `json:"parentJobID,omitempty"`
+	ResourceARN                 *string      `json:"resourceARN,omitempty"`
+	ResourceName                *string      `json:"resourceName,omitempty"`
+	SourceBackupVaultARN        *string      `json:"sourceBackupVaultARN,omitempty"`
+	SourceRecoveryPointARN      *string      `json:"sourceRecoveryPointARN,omitempty"`
+	StatusMessage               *string      `json:"statusMessage,omitempty"`
+}
+
+// This is a summary of copy jobs created or running within the most recent
+// 30 days.
+//
+// The returned summary may contain the following: Region, Account, State, RestourceType,
+// MessageCategory, StartTime, EndTime, and Count of included jobs.
+type CopyJobSummary struct {
+	EndTime   *metav1.Time `json:"endTime,omitempty"`
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+}
+
+// This is a resource filter containing FromDate: DateTime and ToDate: DateTime.
+// Both values are required. Future DateTime values are not permitted.
+//
+// The date and time are in Unix format and Coordinated Universal Time (UTC),
+// and it is accurate to milliseconds ((milliseconds are optional). For example,
+// the value 1516925490.087 represents Friday, January 26, 2018 12:11:30.087
+// AM.
+type DateRange struct {
+	FromDate *metav1.Time `json:"fromDate,omitempty"`
+	ToDate   *metav1.Time `json:"toDate,omitempty"`
+}
+
+// Contains detailed information about a framework. Frameworks contain controls,
+// which evaluate and report on your backup events and resources. Frameworks
+// generate daily compliance results.
+type Framework struct {
+	CreationTime     *metav1.Time `json:"creationTime,omitempty"`
+	DeploymentStatus *string      `json:"deploymentStatus,omitempty"`
+	FrameworkARN     *string      `json:"frameworkARN,omitempty"`
+}
+
+// This is a recovery point that has an associated backup index.
+//
+// Only recovery points with a backup index can be included in a search.
+type IndexedRecoveryPoint struct {
+	BackupCreationDate *metav1.Time `json:"backupCreationDate,omitempty"`
+	BackupVaultARN     *string      `json:"backupVaultARN,omitempty"`
+	IAMRoleARN         *string      `json:"iamRoleARN,omitempty"`
+	IndexCreationDate  *metav1.Time `json:"indexCreationDate,omitempty"`
+	IndexStatusMessage *string      `json:"indexStatusMessage,omitempty"`
+	RecoveryPointARN   *string      `json:"recoveryPointARN,omitempty"`
+	SourceResourceARN  *string      `json:"sourceResourceARN,omitempty"`
+}
+
+// Contains detailed information about a backup job.
+type Job struct {
+	BackupJobID            *string      `json:"backupJobID,omitempty"`
+	BackupSizeInBytes      *int64       `json:"backupSizeInBytes,omitempty"`
+	BackupType             *string      `json:"backupType,omitempty"`
+	BackupVaultARN         *string      `json:"backupVaultARN,omitempty"`
+	BackupVaultName        *string      `json:"backupVaultName,omitempty"`
+	BytesTransferred       *int64       `json:"bytesTransferred,omitempty"`
+	CompletionDate         *metav1.Time `json:"completionDate,omitempty"`
+	CreationDate           *metav1.Time `json:"creationDate,omitempty"`
+	EncryptionKeyARN       *string      `json:"encryptionKeyARN,omitempty"`
+	ExpectedCompletionDate *metav1.Time `json:"expectedCompletionDate,omitempty"`
+	InitiationDate         *metav1.Time `json:"initiationDate,omitempty"`
+	IsEncrypted            *bool        `json:"isEncrypted,omitempty"`
+	IsParent               *bool        `json:"isParent,omitempty"`
+	MessageCategory        *string      `json:"messageCategory,omitempty"`
+	ParentJobID            *string      `json:"parentJobID,omitempty"`
+	PercentDone            *string      `json:"percentDone,omitempty"`
+	RecoveryPointARN       *string      `json:"recoveryPointARN,omitempty"`
+	ResourceARN            *string      `json:"resourceARN,omitempty"`
+	ResourceName           *string      `json:"resourceName,omitempty"`
+	StartBy                *metav1.Time `json:"startBy,omitempty"`
+	StatusMessage          *string      `json:"statusMessage,omitempty"`
+	VaultLockState         *string      `json:"vaultLockState,omitempty"`
+	VaultType              *string      `json:"vaultType,omitempty"`
+}
+
+// Contains information about the latest update to an MPA approval team association.
+type LatestMpaApprovalTeamUpdate struct {
+	ExpiryDate     *metav1.Time `json:"expiryDate,omitempty"`
+	InitiationDate *metav1.Time `json:"initiationDate,omitempty"`
+	MpaSessionARN  *string      `json:"mpaSessionARN,omitempty"`
+	Status         *string      `json:"status,omitempty"`
+	StatusMessage  *string      `json:"statusMessage,omitempty"`
+}
+
+// Contains information about the latest request to revoke access to a backup
+// vault.
+type LatestRevokeRequest struct {
+	ExpiryDate     *metav1.Time `json:"expiryDate,omitempty"`
+	InitiationDate *metav1.Time `json:"initiationDate,omitempty"`
+	MpaSessionARN  *string      `json:"mpaSessionARN,omitempty"`
+	StatusMessage  *string      `json:"statusMessage,omitempty"`
+}
+
+// A legal hold is an administrative tool that helps prevent backups from being
+// deleted while under a hold. While the hold is in place, backups under a hold
+// cannot be deleted and lifecycle policies that would alter the backup status
+// (such as transition to cold storage) are delayed until the legal hold is
+// removed. A backup can have more than one legal hold. Legal holds are applied
+// to one or more backups (also known as recovery points). These backups can
+// be filtered by resource types and by resource IDs.
+type LegalHold struct {
+	CancellationDate *metav1.Time `json:"cancellationDate,omitempty"`
+	CreationDate     *metav1.Time `json:"creationDate,omitempty"`
+	Description      *string      `json:"description,omitempty"`
+	LegalHoldARN     *string      `json:"legalHoldARN,omitempty"`
+	LegalHoldID      *string      `json:"legalHoldID,omitempty"`
+	Title            *string      `json:"title,omitempty"`
+}
+
+// Specifies the time period, in days, before a recovery point transitions to
+// cold storage or is deleted.
+//
+// Backups transitioned to cold storage must be stored in cold storage for a
+// minimum of 90 days. Therefore, on the console, the retention setting must
+// be 90 days greater than the transition to cold after days setting. The transition
+// to cold after days setting can't be changed after a backup has been transitioned
+// to cold.
+//
+// Resource types that can transition to cold storage are listed in the Feature
+// availability by resource (https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-feature-availability.html#features-by-resource)
+// table. Backup ignores this expression for other resource types.
+//
+// To remove the existing lifecycle and retention periods and keep your recovery
+// points indefinitely, specify -1 for MoveToColdStorageAfterDays and DeleteAfterDays.
+type Lifecycle struct {
+	DeleteAfterDays                     *int64 `json:"deleteAfterDays,omitempty"`
+	MoveToColdStorageAfterDays          *int64 `json:"moveToColdStorageAfterDays,omitempty"`
+	OptInToArchiveForSupportedResources *bool  `json:"optInToArchiveForSupportedResources,omitempty"`
+}
+
+// An object specifying metadata associated with a backup plan template.
+type PlanTemplatesListMember struct {
+	BackupPlanTemplateID   *string `json:"backupPlanTemplateID,omitempty"`
+	BackupPlanTemplateName *string `json:"backupPlanTemplateName,omitempty"`
+}
+
+// Contains metadata about a backup plan.
+type PlansListMember struct {
+	BackupPlanARN     *string      `json:"backupPlanARN,omitempty"`
+	BackupPlanID      *string      `json:"backupPlanID,omitempty"`
+	CreationDate      *metav1.Time `json:"creationDate,omitempty"`
+	CreatorRequestID  *string      `json:"creatorRequestID,omitempty"`
+	DeletionDate      *metav1.Time `json:"deletionDate,omitempty"`
+	LastExecutionDate *metav1.Time `json:"lastExecutionDate,omitempty"`
+	VersionID         *string      `json:"versionID,omitempty"`
+}
+
+// A structure that contains information about a backed-up resource.
+type ProtectedResource struct {
+	LastBackupTime       *metav1.Time `json:"lastBackupTime,omitempty"`
+	LastBackupVaultARN   *string      `json:"lastBackupVaultARN,omitempty"`
+	LastRecoveryPointARN *string      `json:"lastRecoveryPointARN,omitempty"`
+	ResourceARN          *string      `json:"resourceARN,omitempty"`
+	ResourceName         *string      `json:"resourceName,omitempty"`
+}
+
+// Contains detailed information about the recovery points stored in a backup
+// vault.
+type RecoveryPointByBackupVault struct {
+	BackupSizeInBytes         *int64       `json:"backupSizeInBytes,omitempty"`
+	BackupVaultARN            *string      `json:"backupVaultARN,omitempty"`
+	BackupVaultName           *string      `json:"backupVaultName,omitempty"`
+	CompletionDate            *metav1.Time `json:"completionDate,omitempty"`
+	CompositeMemberIdentifier *string      `json:"compositeMemberIdentifier,omitempty"`
+	CreationDate              *metav1.Time `json:"creationDate,omitempty"`
+	EncryptionKeyARN          *string      `json:"encryptionKeyARN,omitempty"`
+	EncryptionKeyType         *string      `json:"encryptionKeyType,omitempty"`
+	IndexStatusMessage        *string      `json:"indexStatusMessage,omitempty"`
+	InitiationDate            *metav1.Time `json:"initiationDate,omitempty"`
+	IsEncrypted               *bool        `json:"isEncrypted,omitempty"`
+	IsParent                  *bool        `json:"isParent,omitempty"`
+	LastRestoreTime           *metav1.Time `json:"lastRestoreTime,omitempty"`
+	ParentRecoveryPointARN    *string      `json:"parentRecoveryPointARN,omitempty"`
+	RecoveryPointARN          *string      `json:"recoveryPointARN,omitempty"`
+	ResourceARN               *string      `json:"resourceARN,omitempty"`
+	ResourceName              *string      `json:"resourceName,omitempty"`
+	SourceBackupVaultARN      *string      `json:"sourceBackupVaultARN,omitempty"`
+	StatusMessage             *string      `json:"statusMessage,omitempty"`
+	VaultType                 *string      `json:"vaultType,omitempty"`
+}
+
+// Contains detailed information about a saved recovery point.
+type RecoveryPointByResource struct {
+	BackupSizeBytes        *int64       `json:"backupSizeBytes,omitempty"`
+	BackupVaultName        *string      `json:"backupVaultName,omitempty"`
+	CreationDate           *metav1.Time `json:"creationDate,omitempty"`
+	EncryptionKeyARN       *string      `json:"encryptionKeyARN,omitempty"`
+	EncryptionKeyType      *string      `json:"encryptionKeyType,omitempty"`
+	IndexStatusMessage     *string      `json:"indexStatusMessage,omitempty"`
+	IsParent               *bool        `json:"isParent,omitempty"`
+	ParentRecoveryPointARN *string      `json:"parentRecoveryPointARN,omitempty"`
+	RecoveryPointARN       *string      `json:"recoveryPointARN,omitempty"`
+	ResourceName           *string      `json:"resourceName,omitempty"`
+	StatusMessage          *string      `json:"statusMessage,omitempty"`
+	VaultType              *string      `json:"vaultType,omitempty"`
+}
+
+// Contains information about the backup plan and rule that Backup used to initiate
+// the recovery point backup.
+type RecoveryPointCreator struct {
+	BackupPlanARN      *string `json:"backupPlanARN,omitempty"`
+	BackupPlanID       *string `json:"backupPlanID,omitempty"`
+	BackupPlanName     *string `json:"backupPlanName,omitempty"`
+	BackupPlanVersion  *string `json:"backupPlanVersion,omitempty"`
+	BackupRuleCron     *string `json:"backupRuleCron,omitempty"`
+	BackupRuleID       *string `json:"backupRuleID,omitempty"`
+	BackupRuleName     *string `json:"backupRuleName,omitempty"`
+	BackupRuleTimezone *string `json:"backupRuleTimezone,omitempty"`
+}
+
+// This is a recovery point which is a child (nested) recovery point of a parent
+// (composite) recovery point. These recovery points can be disassociated from
+// their parent (composite) recovery point, in which case they will no longer
+// be a member.
+type RecoveryPointMember struct {
+	BackupVaultName  *string `json:"backupVaultName,omitempty"`
+	RecoveryPointARN *string `json:"recoveryPointARN,omitempty"`
+	ResourceARN      *string `json:"resourceARN,omitempty"`
+}
+
+// Contains information from your report plan about where to deliver your reports,
+// specifically your Amazon S3 bucket name, S3 key prefix, and the formats of
+// your reports.
+type ReportDeliveryChannel struct {
+	S3BucketName *string `json:"s3BucketName,omitempty"`
+	S3KeyPrefix  *string `json:"s3KeyPrefix,omitempty"`
+}
+
+// Contains information from your report job about your report destination.
+type ReportDestination struct {
+	S3BucketName *string `json:"s3BucketName,omitempty"`
+}
+
+// Contains detailed information about a report job. A report job compiles a
+// report based on a report plan and publishes it to Amazon S3.
+type ReportJob struct {
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+	CreationTime   *metav1.Time `json:"creationTime,omitempty"`
+	ReportPlanARN  *string      `json:"reportPlanARN,omitempty"`
+	ReportTemplate *string      `json:"reportTemplate,omitempty"`
+	Status         *string      `json:"status,omitempty"`
+	StatusMessage  *string      `json:"statusMessage,omitempty"`
+}
+
+// Contains detailed information about a report plan.
+type ReportPlan struct {
+	CreationTime                *metav1.Time `json:"creationTime,omitempty"`
+	DeploymentStatus            *string      `json:"deploymentStatus,omitempty"`
+	LastAttemptedExecutionTime  *metav1.Time `json:"lastAttemptedExecutionTime,omitempty"`
+	LastSuccessfulExecutionTime *metav1.Time `json:"lastSuccessfulExecutionTime,omitempty"`
+	ReportPlanARN               *string      `json:"reportPlanARN,omitempty"`
+}
+
+// Contains detailed information about a report setting.
+type ReportSetting struct {
+	ReportTemplate *string `json:"reportTemplate,omitempty"`
+}
+
+// Contains information about a restore access backup vault.
+type RestoreAccessBackupVaultListMember struct {
+	ApprovalDate                *metav1.Time `json:"approvalDate,omitempty"`
+	CreationDate                *metav1.Time `json:"creationDate,omitempty"`
+	RestoreAccessBackupVaultARN *string      `json:"restoreAccessBackupVaultARN,omitempty"`
+	VaultState                  *string      `json:"vaultState,omitempty"`
+}
+
+// Contains information about the restore testing plan that Backup used to initiate
+// the restore job.
+type RestoreJobCreator struct {
+	RestoreTestingPlanARN *string `json:"restoreTestingPlanARN,omitempty"`
+}
+
+// This is a summary of restore jobs created or running within the most recent
+// 30 days.
+//
+// The returned summary may contain the following: Region, Account, State, ResourceType,
+// MessageCategory, StartTime, EndTime, and Count of included jobs.
+type RestoreJobSummary struct {
+	EndTime   *metav1.Time `json:"endTime,omitempty"`
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+}
+
+// Contains metadata about a restore job.
+type RestoreJobsListMember struct {
+	BackupSizeInBytes             *int64       `json:"backupSizeInBytes,omitempty"`
+	BackupVaultARN                *string      `json:"backupVaultARN,omitempty"`
+	CompletionDate                *metav1.Time `json:"completionDate,omitempty"`
+	CreatedResourceARN            *string      `json:"createdResourceARN,omitempty"`
+	CreationDate                  *metav1.Time `json:"creationDate,omitempty"`
+	DeletionStatusMessage         *string      `json:"deletionStatusMessage,omitempty"`
+	ExpectedCompletionTimeMinutes *int64       `json:"expectedCompletionTimeMinutes,omitempty"`
+	IsParent                      *bool        `json:"isParent,omitempty"`
+	ParentJobID                   *string      `json:"parentJobID,omitempty"`
+	PercentDone                   *string      `json:"percentDone,omitempty"`
+	RecoveryPointARN              *string      `json:"recoveryPointARN,omitempty"`
+	RecoveryPointCreationDate     *metav1.Time `json:"recoveryPointCreationDate,omitempty"`
+	RestoreJobID                  *string      `json:"restoreJobID,omitempty"`
+	SourceResourceARN             *string      `json:"sourceResourceARN,omitempty"`
+	StatusMessage                 *string      `json:"statusMessage,omitempty"`
+	ValidationStatusMessage       *string      `json:"validationStatusMessage,omitempty"`
+}
+
+// This contains metadata about a restore testing plan.
+type RestoreTestingPlanForGet struct {
+	CreationTime      *metav1.Time `json:"creationTime,omitempty"`
+	LastExecutionTime *metav1.Time `json:"lastExecutionTime,omitempty"`
+	LastUpdateTime    *metav1.Time `json:"lastUpdateTime,omitempty"`
+}
+
+// This contains metadata about a restore testing plan.
+type RestoreTestingPlanForList struct {
+	CreationTime      *metav1.Time `json:"creationTime,omitempty"`
+	LastExecutionTime *metav1.Time `json:"lastExecutionTime,omitempty"`
+	LastUpdateTime    *metav1.Time `json:"lastUpdateTime,omitempty"`
+}
+
+// This contains metadata about a restore testing selection.
+type RestoreTestingSelectionForGet struct {
+	CreationTime *metav1.Time `json:"creationTime,omitempty"`
+}
+
+// This contains metadata about a restore testing selection.
+type RestoreTestingSelectionForList struct {
+	CreationTime *metav1.Time `json:"creationTime,omitempty"`
+}
+
+// Specifies a scheduled task used to back up a selection of resources.
+type Rule struct {
+	EnableContinuousBackup                 *bool              `json:"enableContinuousBackup,omitempty"`
+	RecoveryPointTags                      map[string]*string `json:"recoveryPointTags,omitempty"`
+	RuleID                                 *string            `json:"ruleID,omitempty"`
+	TargetBackupVaultName                  *string            `json:"targetBackupVaultName,omitempty"`
+	TargetLogicallyAirGappedBackupVaultARN *string            `json:"targetLogicallyAirGappedBackupVaultARN,omitempty"`
+}
+
+// Specifies a scheduled task used to back up a selection of resources.
+type RuleInput struct {
+	EnableContinuousBackup                 *bool              `json:"enableContinuousBackup,omitempty"`
+	RecoveryPointTags                      map[string]*string `json:"recoveryPointTags,omitempty"`
+	TargetBackupVaultName                  *string            `json:"targetBackupVaultName,omitempty"`
+	TargetLogicallyAirGappedBackupVaultARN *string            `json:"targetLogicallyAirGappedBackupVaultARN,omitempty"`
+}
+
+// Contains metadata about a scan job, including information about the scanning
+// process, results, and associated resources.
+type ScanJob struct {
+	CompletionDate *metav1.Time `json:"completionDate,omitempty"`
+	CreationDate   *metav1.Time `json:"creationDate,omitempty"`
+}
+
+// Contains summary information about scan jobs, including counts and metadata
+// for a specific time period and criteria.
+type ScanJobSummary struct {
+	EndTime   *metav1.Time `json:"endTime,omitempty"`
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+}
+
+// Contains the results of a security scan, including scanner information, scan
+// state, and any findings discovered.
+type ScanResult struct {
+	LastScanTimestamp *metav1.Time `json:"lastScanTimestamp,omitempty"`
+}
+
+// Contains information about a scheduled backup plan execution, including the
+// execution time, rule type, and associated rule identifier.
+type ScheduledPlanExecutionMember struct {
+	ExecutionTime *metav1.Time `json:"executionTime,omitempty"`
+	RuleID        *string      `json:"ruleID,omitempty"`
+}
+
+// Contains metadata about a BackupSelection object.
+type SelectionsListMember struct {
+	BackupPlanID     *string      `json:"backupPlanID,omitempty"`
+	CreationDate     *metav1.Time `json:"creationDate,omitempty"`
+	CreatorRequestID *string      `json:"creatorRequestID,omitempty"`
+	SelectionID      *string      `json:"selectionID,omitempty"`
+}
+
+// This contains metadata about a tiering configuration.
+type TieringConfiguration struct {
+	CreationTime            *metav1.Time `json:"creationTime,omitempty"`
+	LastUpdatedTime         *metav1.Time `json:"lastUpdatedTime,omitempty"`
+	TieringConfigurationARN *string      `json:"tieringConfigurationARN,omitempty"`
+}
+
+// This contains metadata about a tiering configuration returned in a list.
+type TieringConfigurationsListMember struct {
+	CreationTime            *metav1.Time `json:"creationTime,omitempty"`
+	LastUpdatedTime         *metav1.Time `json:"lastUpdatedTime,omitempty"`
+	TieringConfigurationARN *string      `json:"tieringConfigurationARN,omitempty"`
+}
+
+// Contains metadata about a backup vault.
+type VaultListMember struct {
+	BackupVaultARN         *string      `json:"backupVaultARN,omitempty"`
+	BackupVaultName        *string      `json:"backupVaultName,omitempty"`
+	CreationDate           *metav1.Time `json:"creationDate,omitempty"`
+	CreatorRequestID       *string      `json:"creatorRequestID,omitempty"`
+	EncryptionKeyARN       *string      `json:"encryptionKeyARN,omitempty"`
+	EncryptionKeyType      *string      `json:"encryptionKeyType,omitempty"`
+	LockDate               *metav1.Time `json:"lockDate,omitempty"`
+	Locked                 *bool        `json:"locked,omitempty"`
+	MaxRetentionDays       *int64       `json:"maxRetentionDays,omitempty"`
+	MinRetentionDays       *int64       `json:"minRetentionDays,omitempty"`
+	NumberOfRecoveryPoints *int64       `json:"numberOfRecoveryPoints,omitempty"`
+	VaultState             *string      `json:"vaultState,omitempty"`
+	VaultType              *string      `json:"vaultType,omitempty"`
+}

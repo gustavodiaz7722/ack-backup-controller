@@ -9,6 +9,7 @@ rules:
 - apiGroups:
   - backup.services.k8s.aws
   resources:
+  - backupvaults
   verbs:
   - get
   - list
