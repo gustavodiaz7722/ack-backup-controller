@@ -1,0 +1,9 @@
+apiVersion: backup.services.k8s.aws/v1alpha1
+kind: BackupVault
+metadata:
+  name: $VAULT_NAME
+spec:
+  name: $VAULT_NAME
+  encryptionKeyARN: $KMS_KEY_ARN
+  tags:
+    ManagedBy: ACK
