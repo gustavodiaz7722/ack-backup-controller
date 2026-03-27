@@ -2,7 +2,6 @@ ignore:
   resource_names:
     - BackupPlan
     - BackupSelection
-    - BackupVault
     - Framework
     - LegalHold
     - LogicallyAirGappedBackupVault
@@ -12,3 +11,86 @@ ignore:
     - RestoreTestingSelection
     - TieringConfiguration
   field_paths: []
+
+resources:
+  BackupVault:
+    ignore_idempotency_token: true
+    fields:
+      Name:
+        is_primary_key: true
+        is_immutable: true
+      # Cross-resource reference to KMS Key for encryption.
+      # Set at vault creation time and cannot be changed afterward.
+      EncryptionKeyARN:
+        is_immutable: true
+        references:
+          resource: Key
+          service_name: kms
+          path: Status.ACKResourceMetadata.ARN
+      # Read-only status fields from DescribeBackupVault
+      EncryptionKeyType:
+        is_read_only: true
+        from:
+          operation: DescribeBackupVault
+          path: EncryptionKeyType
+      LockDate:
+        is_read_only: true
+        from:
+          operation: DescribeBackupVault
+          path: LockDate
+      Locked:
+        is_read_only: true
+        from:
+          operation: DescribeBackupVault
+          path: Locked
+      MaxRetentionDays:
+        is_read_only: true
+        from:
+          operation: DescribeBackupVault
+          path: MaxRetentionDays
+      MinRetentionDays:
+        is_read_only: true
+        from:
+          operation: DescribeBackupVault
+          path: MinRetentionDays
+      NumberOfRecoveryPoints:
+        is_read_only: true
+        from:
+          operation: DescribeBackupVault
+          path: NumberOfRecoveryPoints
+      # NOTE: VaultState is intentionally excluded. The DescribeBackupVault
+      # API only returns it for logically air-gapped vaults (which are in the
+      # ignore list). For standard BACKUP_VAULT types it is always empty.
+      VaultType:
+        is_read_only: true
+        from:
+          operation: DescribeBackupVault
+          path: VaultType
+    # There is no UpdateBackupVault API. Fields must be updated via separate APIs.
+    update_operation:
+      custom_method_name: customUpdateBackupVault
+    hooks:
+      sdk_read_one_post_set_output:
+        template_path: hooks/backup_vault/sdk_read_one_post_set_output.go.tpl
+    renames:
+      operations:
+        CreateBackupVault:
+          input_fields:
+            BackupVaultName: Name
+            BackupVaultTags: Tags
+        DeleteBackupVault:
+          input_fields:
+            BackupVaultName: Name
+        DescribeBackupVault:
+          input_fields:
+            BackupVaultName: Name
+          output_fields:
+            BackupVaultName: Name
+    exceptions:
+      errors:
+        404:
+          code: AccessDeniedException
+      terminal_codes:
+        - InvalidParameterValueException
+        - MissingParameterValueException
+        - InvalidRequestException
