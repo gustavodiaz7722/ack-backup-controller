@@ -1,6 +1,13 @@
+operations:
+  CreateBackupPlan:
+    input_wrapper_field_path: BackupPlan
+  UpdateBackupPlan:
+    input_wrapper_field_path: BackupPlan
+  GetBackupPlan:
+    output_wrapper_field_path: BackupPlan
+
 ignore:
   resource_names:
-    - BackupPlan
     - BackupSelection
     - Framework
     - LegalHold
@@ -94,3 +101,55 @@ resources:
         - InvalidParameterValueException
         - MissingParameterValueException
         - InvalidRequestException
+  BackupPlan:
+    ignore_idempotency_token: true
+    hooks:
+      sdk_update_post_build_request:
+        template_path: hooks/backup_plan/sdk_update_post_build_request.go.tpl
+    fields:
+      ID:
+        is_primary_key: true
+        is_immutable: true
+      LastExecutionDate:
+        is_read_only: true
+        from:
+          operation: GetBackupPlan
+          path: LastExecutionDate
+      Tags:
+        type: "map[string]*string"
+      Rules.TargetBackupVaultName:
+        references:
+          resource: BackupVault
+          path: Spec.Name
+      Rules.CopyActions.DestinationBackupVaultARN:
+        references:
+          resource: BackupVault
+          path: Status.ACKResourceMetadata.ARN
+    renames:
+      operations:
+        CreateBackupPlan:
+          input_fields:
+            BackupPlanName: Name
+            BackupPlanTags: Tags
+          output_fields:
+            BackupPlanId: ID
+        UpdateBackupPlan:
+          input_fields:
+            BackupPlanName: Name
+            BackupPlanId: ID
+        GetBackupPlan:
+          input_fields:
+            BackupPlanId: ID
+          output_fields:
+            BackupPlanName: Name
+            BackupPlanId: ID
+        DeleteBackupPlan:
+          input_fields:
+            BackupPlanId: ID
+    exceptions:
+      errors:
+        404:
+          code: ResourceNotFoundException
+      terminal_codes:
+        - InvalidParameterValueException
+        - MissingParameterValueException

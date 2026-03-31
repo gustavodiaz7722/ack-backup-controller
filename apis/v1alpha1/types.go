@@ -28,6 +28,12 @@ var (
 	_ = ackv1alpha1.AWSAccountID("")
 )
 
+// The backup options for each resource type.
+type AdvancedBackupSetting struct {
+	BackupOptions map[string]*string `json:"backupOptions,omitempty"`
+	ResourceType  *string            `json:"resourceType,omitempty"`
+}
+
 // Contains aggregated scan results across multiple scan operations, providing
 // a summary of scan status and findings.
 type AggregatedScanResult struct {
@@ -40,8 +46,9 @@ type AggregatedScanResult struct {
 // The returned summary may contain the following: Region, Account, State, RestourceType,
 // MessageCategory, StartTime, EndTime, and Count of included jobs.
 type BackupJobSummary struct {
-	EndTime   *metav1.Time `json:"endTime,omitempty"`
-	StartTime *metav1.Time `json:"startTime,omitempty"`
+	EndTime      *metav1.Time `json:"endTime,omitempty"`
+	ResourceType *string      `json:"resourceType,omitempty"`
+	StartTime    *metav1.Time `json:"startTime,omitempty"`
 }
 
 // Contains DeleteAt and MoveToColdStorageAt timestamps, which are used to specify
@@ -68,6 +75,24 @@ type CalculatedLifecycle struct {
 // The details of the copy operation.
 type CopyAction struct {
 	DestinationBackupVaultARN *string `json:"destinationBackupVaultARN,omitempty"`
+	// Reference field for DestinationBackupVaultARN
+	DestinationBackupVaultRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"destinationBackupVaultRef,omitempty"`
+	// Specifies the time period, in days, before a recovery point transitions to
+	// cold storage or is deleted.
+	//
+	// Backups transitioned to cold storage must be stored in cold storage for a
+	// minimum of 90 days. Therefore, on the console, the retention setting must
+	// be 90 days greater than the transition to cold after days setting. The transition
+	// to cold after days setting can't be changed after a backup has been transitioned
+	// to cold.
+	//
+	// Resource types that can transition to cold storage are listed in the Feature
+	// availability by resource (https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-feature-availability.html#features-by-resource)
+	// table. Backup ignores this expression for other resource types.
+	//
+	// To remove the existing lifecycle and retention periods and keep your recovery
+	// points indefinitely, specify -1 for MoveToColdStorageAfterDays and DeleteAfterDays.
+	Lifecycle *Lifecycle `json:"lifecycle,omitempty"`
 }
 
 // Contains detailed information about a copy job.
@@ -81,17 +106,35 @@ type CopyJob struct {
 	DestinationBackupVaultARN   *string      `json:"destinationBackupVaultARN,omitempty"`
 	DestinationEncryptionKeyARN *string      `json:"destinationEncryptionKeyARN,omitempty"`
 	DestinationRecoveryPointARN *string      `json:"destinationRecoveryPointARN,omitempty"`
-	DestinationVaultLockState   *string      `json:"destinationVaultLockState,omitempty"`
-	DestinationVaultType        *string      `json:"destinationVaultType,omitempty"`
-	IsParent                    *bool        `json:"isParent,omitempty"`
-	MessageCategory             *string      `json:"messageCategory,omitempty"`
-	NumberOfChildJobs           *int64       `json:"numberOfChildJobs,omitempty"`
-	ParentJobID                 *string      `json:"parentJobID,omitempty"`
-	ResourceARN                 *string      `json:"resourceARN,omitempty"`
-	ResourceName                *string      `json:"resourceName,omitempty"`
-	SourceBackupVaultARN        *string      `json:"sourceBackupVaultARN,omitempty"`
-	SourceRecoveryPointARN      *string      `json:"sourceRecoveryPointARN,omitempty"`
-	StatusMessage               *string      `json:"statusMessage,omitempty"`
+	// Specifies the time period, in days, before a recovery point transitions to
+	// cold storage or is deleted.
+	//
+	// Backups transitioned to cold storage must be stored in cold storage for a
+	// minimum of 90 days. Therefore, on the console, the retention setting must
+	// be 90 days greater than the transition to cold after days setting. The transition
+	// to cold after days setting can't be changed after a backup has been transitioned
+	// to cold.
+	//
+	// Resource types that can transition to cold storage are listed in the Feature
+	// availability by resource (https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-feature-availability.html#features-by-resource)
+	// table. Backup ignores this expression for other resource types.
+	//
+	// To remove the existing lifecycle and retention periods and keep your recovery
+	// points indefinitely, specify -1 for MoveToColdStorageAfterDays and DeleteAfterDays.
+	DestinationRecoveryPointLifecycle *Lifecycle `json:"destinationRecoveryPointLifecycle,omitempty"`
+	DestinationVaultLockState         *string    `json:"destinationVaultLockState,omitempty"`
+	DestinationVaultType              *string    `json:"destinationVaultType,omitempty"`
+	IAMRoleARN                        *string    `json:"iamRoleARN,omitempty"`
+	IsParent                          *bool      `json:"isParent,omitempty"`
+	MessageCategory                   *string    `json:"messageCategory,omitempty"`
+	NumberOfChildJobs                 *int64     `json:"numberOfChildJobs,omitempty"`
+	ParentJobID                       *string    `json:"parentJobID,omitempty"`
+	ResourceARN                       *string    `json:"resourceARN,omitempty"`
+	ResourceName                      *string    `json:"resourceName,omitempty"`
+	ResourceType                      *string    `json:"resourceType,omitempty"`
+	SourceBackupVaultARN              *string    `json:"sourceBackupVaultARN,omitempty"`
+	SourceRecoveryPointARN            *string    `json:"sourceRecoveryPointARN,omitempty"`
+	StatusMessage                     *string    `json:"statusMessage,omitempty"`
 }
 
 // This is a summary of copy jobs created or running within the most recent
@@ -100,8 +143,9 @@ type CopyJob struct {
 // The returned summary may contain the following: Region, Account, State, RestourceType,
 // MessageCategory, StartTime, EndTime, and Count of included jobs.
 type CopyJobSummary struct {
-	EndTime   *metav1.Time `json:"endTime,omitempty"`
-	StartTime *metav1.Time `json:"startTime,omitempty"`
+	EndTime      *metav1.Time `json:"endTime,omitempty"`
+	ResourceType *string      `json:"resourceType,omitempty"`
+	StartTime    *metav1.Time `json:"startTime,omitempty"`
 }
 
 // This is a resource filter containing FromDate: DateTime and ToDate: DateTime.
@@ -125,6 +169,13 @@ type Framework struct {
 	FrameworkARN     *string      `json:"frameworkARN,omitempty"`
 }
 
+// This is an optional array within a BackupRule.
+//
+// IndexAction consists of one ResourceTypes.
+type IndexAction struct {
+	ResourceTypes []*string `json:"resourceTypes,omitempty"`
+}
+
 // This is a recovery point that has an associated backup index.
 //
 // Only recovery points with a backup index can be included in a search.
@@ -135,30 +186,50 @@ type IndexedRecoveryPoint struct {
 	IndexCreationDate  *metav1.Time `json:"indexCreationDate,omitempty"`
 	IndexStatusMessage *string      `json:"indexStatusMessage,omitempty"`
 	RecoveryPointARN   *string      `json:"recoveryPointARN,omitempty"`
+	ResourceType       *string      `json:"resourceType,omitempty"`
 	SourceResourceARN  *string      `json:"sourceResourceARN,omitempty"`
 }
 
 // Contains detailed information about a backup job.
 type Job struct {
-	BackupJobID            *string      `json:"backupJobID,omitempty"`
-	BackupSizeInBytes      *int64       `json:"backupSizeInBytes,omitempty"`
-	BackupType             *string      `json:"backupType,omitempty"`
-	BackupVaultARN         *string      `json:"backupVaultARN,omitempty"`
-	BackupVaultName        *string      `json:"backupVaultName,omitempty"`
-	BytesTransferred       *int64       `json:"bytesTransferred,omitempty"`
-	CompletionDate         *metav1.Time `json:"completionDate,omitempty"`
-	CreationDate           *metav1.Time `json:"creationDate,omitempty"`
-	EncryptionKeyARN       *string      `json:"encryptionKeyARN,omitempty"`
-	ExpectedCompletionDate *metav1.Time `json:"expectedCompletionDate,omitempty"`
-	InitiationDate         *metav1.Time `json:"initiationDate,omitempty"`
-	IsEncrypted            *bool        `json:"isEncrypted,omitempty"`
-	IsParent               *bool        `json:"isParent,omitempty"`
-	MessageCategory        *string      `json:"messageCategory,omitempty"`
-	ParentJobID            *string      `json:"parentJobID,omitempty"`
-	PercentDone            *string      `json:"percentDone,omitempty"`
-	RecoveryPointARN       *string      `json:"recoveryPointARN,omitempty"`
+	BackupJobID            *string            `json:"backupJobID,omitempty"`
+	BackupOptions          map[string]*string `json:"backupOptions,omitempty"`
+	BackupSizeInBytes      *int64             `json:"backupSizeInBytes,omitempty"`
+	BackupType             *string            `json:"backupType,omitempty"`
+	BackupVaultARN         *string            `json:"backupVaultARN,omitempty"`
+	BackupVaultName        *string            `json:"backupVaultName,omitempty"`
+	BytesTransferred       *int64             `json:"bytesTransferred,omitempty"`
+	CompletionDate         *metav1.Time       `json:"completionDate,omitempty"`
+	CreationDate           *metav1.Time       `json:"creationDate,omitempty"`
+	EncryptionKeyARN       *string            `json:"encryptionKeyARN,omitempty"`
+	ExpectedCompletionDate *metav1.Time       `json:"expectedCompletionDate,omitempty"`
+	IAMRoleARN             *string            `json:"iamRoleARN,omitempty"`
+	InitiationDate         *metav1.Time       `json:"initiationDate,omitempty"`
+	IsEncrypted            *bool              `json:"isEncrypted,omitempty"`
+	IsParent               *bool              `json:"isParent,omitempty"`
+	MessageCategory        *string            `json:"messageCategory,omitempty"`
+	ParentJobID            *string            `json:"parentJobID,omitempty"`
+	PercentDone            *string            `json:"percentDone,omitempty"`
+	RecoveryPointARN       *string            `json:"recoveryPointARN,omitempty"`
+	// Specifies the time period, in days, before a recovery point transitions to
+	// cold storage or is deleted.
+	//
+	// Backups transitioned to cold storage must be stored in cold storage for a
+	// minimum of 90 days. Therefore, on the console, the retention setting must
+	// be 90 days greater than the transition to cold after days setting. The transition
+	// to cold after days setting can't be changed after a backup has been transitioned
+	// to cold.
+	//
+	// Resource types that can transition to cold storage are listed in the Feature
+	// availability by resource (https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-feature-availability.html#features-by-resource)
+	// table. Backup ignores this expression for other resource types.
+	//
+	// To remove the existing lifecycle and retention periods and keep your recovery
+	// points indefinitely, specify -1 for MoveToColdStorageAfterDays and DeleteAfterDays.
+	RecoveryPointLifecycle *Lifecycle   `json:"recoveryPointLifecycle,omitempty"`
 	ResourceARN            *string      `json:"resourceARN,omitempty"`
 	ResourceName           *string      `json:"resourceName,omitempty"`
+	ResourceType           *string      `json:"resourceType,omitempty"`
 	StartBy                *metav1.Time `json:"startBy,omitempty"`
 	StatusMessage          *string      `json:"statusMessage,omitempty"`
 	VaultLockState         *string      `json:"vaultLockState,omitempty"`
@@ -215,9 +286,31 @@ type LegalHold struct {
 // To remove the existing lifecycle and retention periods and keep your recovery
 // points indefinitely, specify -1 for MoveToColdStorageAfterDays and DeleteAfterDays.
 type Lifecycle struct {
-	DeleteAfterDays                     *int64 `json:"deleteAfterDays,omitempty"`
-	MoveToColdStorageAfterDays          *int64 `json:"moveToColdStorageAfterDays,omitempty"`
-	OptInToArchiveForSupportedResources *bool  `json:"optInToArchiveForSupportedResources,omitempty"`
+	DeleteAfterDays                     *int64  `json:"deleteAfterDays,omitempty"`
+	DeleteAfterEvent                    *string `json:"deleteAfterEvent,omitempty"`
+	MoveToColdStorageAfterDays          *int64  `json:"moveToColdStorageAfterDays,omitempty"`
+	OptInToArchiveForSupportedResources *bool   `json:"optInToArchiveForSupportedResources,omitempty"`
+}
+
+// Contains an optional backup plan display name and an array of BackupRule
+// objects, each of which specifies a backup rule. Each rule in a backup plan
+// is a separate scheduled task and can back up a different selection of Amazon
+// Web Services resources.
+type Plan struct {
+	AdvancedBackupSettings []*AdvancedBackupSetting `json:"advancedBackupSettings,omitempty"`
+	BackupPlanName         *string                  `json:"backupPlanName,omitempty"`
+	Rules                  []*Rule                  `json:"rules,omitempty"`
+	ScanSettings           []*ScanSetting           `json:"scanSettings,omitempty"`
+}
+
+// Contains an optional backup plan display name and an array of BackupRule
+// objects, each of which specifies a backup rule. Each rule in a backup plan
+// is a separate scheduled task.
+type PlanInput struct {
+	AdvancedBackupSettings []*AdvancedBackupSetting `json:"advancedBackupSettings,omitempty"`
+	BackupPlanName         *string                  `json:"backupPlanName,omitempty"`
+	Rules                  []*RuleInput             `json:"rules,omitempty"`
+	ScanSettings           []*ScanSetting           `json:"scanSettings,omitempty"`
 }
 
 // An object specifying metadata associated with a backup plan template.
@@ -228,13 +321,15 @@ type PlanTemplatesListMember struct {
 
 // Contains metadata about a backup plan.
 type PlansListMember struct {
-	BackupPlanARN     *string      `json:"backupPlanARN,omitempty"`
-	BackupPlanID      *string      `json:"backupPlanID,omitempty"`
-	CreationDate      *metav1.Time `json:"creationDate,omitempty"`
-	CreatorRequestID  *string      `json:"creatorRequestID,omitempty"`
-	DeletionDate      *metav1.Time `json:"deletionDate,omitempty"`
-	LastExecutionDate *metav1.Time `json:"lastExecutionDate,omitempty"`
-	VersionID         *string      `json:"versionID,omitempty"`
+	AdvancedBackupSettings []*AdvancedBackupSetting `json:"advancedBackupSettings,omitempty"`
+	BackupPlanARN          *string                  `json:"backupPlanARN,omitempty"`
+	BackupPlanID           *string                  `json:"backupPlanID,omitempty"`
+	BackupPlanName         *string                  `json:"backupPlanName,omitempty"`
+	CreationDate           *metav1.Time             `json:"creationDate,omitempty"`
+	CreatorRequestID       *string                  `json:"creatorRequestID,omitempty"`
+	DeletionDate           *metav1.Time             `json:"deletionDate,omitempty"`
+	LastExecutionDate      *metav1.Time             `json:"lastExecutionDate,omitempty"`
+	VersionID              *string                  `json:"versionID,omitempty"`
 }
 
 // A structure that contains information about a backed-up resource.
@@ -244,6 +339,7 @@ type ProtectedResource struct {
 	LastRecoveryPointARN *string      `json:"lastRecoveryPointARN,omitempty"`
 	ResourceARN          *string      `json:"resourceARN,omitempty"`
 	ResourceName         *string      `json:"resourceName,omitempty"`
+	ResourceType         *string      `json:"resourceType,omitempty"`
 }
 
 // Contains detailed information about the recovery points stored in a backup
@@ -257,18 +353,36 @@ type RecoveryPointByBackupVault struct {
 	CreationDate              *metav1.Time `json:"creationDate,omitempty"`
 	EncryptionKeyARN          *string      `json:"encryptionKeyARN,omitempty"`
 	EncryptionKeyType         *string      `json:"encryptionKeyType,omitempty"`
+	IAMRoleARN                *string      `json:"iamRoleARN,omitempty"`
 	IndexStatusMessage        *string      `json:"indexStatusMessage,omitempty"`
 	InitiationDate            *metav1.Time `json:"initiationDate,omitempty"`
 	IsEncrypted               *bool        `json:"isEncrypted,omitempty"`
 	IsParent                  *bool        `json:"isParent,omitempty"`
 	LastRestoreTime           *metav1.Time `json:"lastRestoreTime,omitempty"`
-	ParentRecoveryPointARN    *string      `json:"parentRecoveryPointARN,omitempty"`
-	RecoveryPointARN          *string      `json:"recoveryPointARN,omitempty"`
-	ResourceARN               *string      `json:"resourceARN,omitempty"`
-	ResourceName              *string      `json:"resourceName,omitempty"`
-	SourceBackupVaultARN      *string      `json:"sourceBackupVaultARN,omitempty"`
-	StatusMessage             *string      `json:"statusMessage,omitempty"`
-	VaultType                 *string      `json:"vaultType,omitempty"`
+	// Specifies the time period, in days, before a recovery point transitions to
+	// cold storage or is deleted.
+	//
+	// Backups transitioned to cold storage must be stored in cold storage for a
+	// minimum of 90 days. Therefore, on the console, the retention setting must
+	// be 90 days greater than the transition to cold after days setting. The transition
+	// to cold after days setting can't be changed after a backup has been transitioned
+	// to cold.
+	//
+	// Resource types that can transition to cold storage are listed in the Feature
+	// availability by resource (https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-feature-availability.html#features-by-resource)
+	// table. Backup ignores this expression for other resource types.
+	//
+	// To remove the existing lifecycle and retention periods and keep your recovery
+	// points indefinitely, specify -1 for MoveToColdStorageAfterDays and DeleteAfterDays.
+	Lifecycle              *Lifecycle `json:"lifecycle,omitempty"`
+	ParentRecoveryPointARN *string    `json:"parentRecoveryPointARN,omitempty"`
+	RecoveryPointARN       *string    `json:"recoveryPointARN,omitempty"`
+	ResourceARN            *string    `json:"resourceARN,omitempty"`
+	ResourceName           *string    `json:"resourceName,omitempty"`
+	ResourceType           *string    `json:"resourceType,omitempty"`
+	SourceBackupVaultARN   *string    `json:"sourceBackupVaultARN,omitempty"`
+	StatusMessage          *string    `json:"statusMessage,omitempty"`
+	VaultType              *string    `json:"vaultType,omitempty"`
 }
 
 // Contains detailed information about a saved recovery point.
@@ -308,6 +422,7 @@ type RecoveryPointMember struct {
 	BackupVaultName  *string `json:"backupVaultName,omitempty"`
 	RecoveryPointARN *string `json:"recoveryPointARN,omitempty"`
 	ResourceARN      *string `json:"resourceARN,omitempty"`
+	ResourceType     *string `json:"resourceType,omitempty"`
 }
 
 // Contains information from your report plan about where to deliver your reports,
@@ -348,6 +463,14 @@ type ReportSetting struct {
 	ReportTemplate *string `json:"reportTemplate,omitempty"`
 }
 
+// This contains metadata about resource selection for tiering configurations.
+//
+// You can specify up to 5 different resource selections per tiering configuration.
+// Data moved to lower-cost tier remains there until deletion (one-way transition).
+type ResourceSelection struct {
+	ResourceType *string `json:"resourceType,omitempty"`
+}
+
 // Contains information about a restore access backup vault.
 type RestoreAccessBackupVaultListMember struct {
 	ApprovalDate                *metav1.Time `json:"approvalDate,omitempty"`
@@ -368,8 +491,9 @@ type RestoreJobCreator struct {
 // The returned summary may contain the following: Region, Account, State, ResourceType,
 // MessageCategory, StartTime, EndTime, and Count of included jobs.
 type RestoreJobSummary struct {
-	EndTime   *metav1.Time `json:"endTime,omitempty"`
-	StartTime *metav1.Time `json:"startTime,omitempty"`
+	EndTime      *metav1.Time `json:"endTime,omitempty"`
+	ResourceType *string      `json:"resourceType,omitempty"`
+	StartTime    *metav1.Time `json:"startTime,omitempty"`
 }
 
 // Contains metadata about a restore job.
@@ -381,11 +505,13 @@ type RestoreJobsListMember struct {
 	CreationDate                  *metav1.Time `json:"creationDate,omitempty"`
 	DeletionStatusMessage         *string      `json:"deletionStatusMessage,omitempty"`
 	ExpectedCompletionTimeMinutes *int64       `json:"expectedCompletionTimeMinutes,omitempty"`
+	IAMRoleARN                    *string      `json:"iamRoleARN,omitempty"`
 	IsParent                      *bool        `json:"isParent,omitempty"`
 	ParentJobID                   *string      `json:"parentJobID,omitempty"`
 	PercentDone                   *string      `json:"percentDone,omitempty"`
 	RecoveryPointARN              *string      `json:"recoveryPointARN,omitempty"`
 	RecoveryPointCreationDate     *metav1.Time `json:"recoveryPointCreationDate,omitempty"`
+	ResourceType                  *string      `json:"resourceType,omitempty"`
 	RestoreJobID                  *string      `json:"restoreJobID,omitempty"`
 	SourceResourceARN             *string      `json:"sourceResourceARN,omitempty"`
 	StatusMessage                 *string      `json:"statusMessage,omitempty"`
@@ -418,19 +544,76 @@ type RestoreTestingSelectionForList struct {
 
 // Specifies a scheduled task used to back up a selection of resources.
 type Rule struct {
-	EnableContinuousBackup                 *bool              `json:"enableContinuousBackup,omitempty"`
+	CompletionWindowMinutes *int64         `json:"completionWindowMinutes,omitempty"`
+	CopyActions             []*CopyAction  `json:"copyActions,omitempty"`
+	EnableContinuousBackup  *bool          `json:"enableContinuousBackup,omitempty"`
+	IndexActions            []*IndexAction `json:"indexActions,omitempty"`
+	// Specifies the time period, in days, before a recovery point transitions to
+	// cold storage or is deleted.
+	//
+	// Backups transitioned to cold storage must be stored in cold storage for a
+	// minimum of 90 days. Therefore, on the console, the retention setting must
+	// be 90 days greater than the transition to cold after days setting. The transition
+	// to cold after days setting can't be changed after a backup has been transitioned
+	// to cold.
+	//
+	// Resource types that can transition to cold storage are listed in the Feature
+	// availability by resource (https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-feature-availability.html#features-by-resource)
+	// table. Backup ignores this expression for other resource types.
+	//
+	// To remove the existing lifecycle and retention periods and keep your recovery
+	// points indefinitely, specify -1 for MoveToColdStorageAfterDays and DeleteAfterDays.
+	Lifecycle                              *Lifecycle         `json:"lifecycle,omitempty"`
 	RecoveryPointTags                      map[string]*string `json:"recoveryPointTags,omitempty"`
 	RuleID                                 *string            `json:"ruleID,omitempty"`
+	RuleName                               *string            `json:"ruleName,omitempty"`
+	ScanActions                            []*ScanAction      `json:"scanActions,omitempty"`
+	ScheduleExpression                     *string            `json:"scheduleExpression,omitempty"`
+	ScheduleExpressionTimezone             *string            `json:"scheduleExpressionTimezone,omitempty"`
+	StartWindowMinutes                     *int64             `json:"startWindowMinutes,omitempty"`
 	TargetBackupVaultName                  *string            `json:"targetBackupVaultName,omitempty"`
 	TargetLogicallyAirGappedBackupVaultARN *string            `json:"targetLogicallyAirGappedBackupVaultARN,omitempty"`
 }
 
 // Specifies a scheduled task used to back up a selection of resources.
 type RuleInput struct {
-	EnableContinuousBackup                 *bool              `json:"enableContinuousBackup,omitempty"`
-	RecoveryPointTags                      map[string]*string `json:"recoveryPointTags,omitempty"`
-	TargetBackupVaultName                  *string            `json:"targetBackupVaultName,omitempty"`
-	TargetLogicallyAirGappedBackupVaultARN *string            `json:"targetLogicallyAirGappedBackupVaultARN,omitempty"`
+	CompletionWindowMinutes *int64         `json:"completionWindowMinutes,omitempty"`
+	CopyActions             []*CopyAction  `json:"copyActions,omitempty"`
+	EnableContinuousBackup  *bool          `json:"enableContinuousBackup,omitempty"`
+	IndexActions            []*IndexAction `json:"indexActions,omitempty"`
+	// Specifies the time period, in days, before a recovery point transitions to
+	// cold storage or is deleted.
+	//
+	// Backups transitioned to cold storage must be stored in cold storage for a
+	// minimum of 90 days. Therefore, on the console, the retention setting must
+	// be 90 days greater than the transition to cold after days setting. The transition
+	// to cold after days setting can't be changed after a backup has been transitioned
+	// to cold.
+	//
+	// Resource types that can transition to cold storage are listed in the Feature
+	// availability by resource (https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-feature-availability.html#features-by-resource)
+	// table. Backup ignores this expression for other resource types.
+	//
+	// To remove the existing lifecycle and retention periods and keep your recovery
+	// points indefinitely, specify -1 for MoveToColdStorageAfterDays and DeleteAfterDays.
+	Lifecycle                  *Lifecycle         `json:"lifecycle,omitempty"`
+	RecoveryPointTags          map[string]*string `json:"recoveryPointTags,omitempty"`
+	RuleName                   *string            `json:"ruleName,omitempty"`
+	ScanActions                []*ScanAction      `json:"scanActions,omitempty"`
+	ScheduleExpression         *string            `json:"scheduleExpression,omitempty"`
+	ScheduleExpressionTimezone *string            `json:"scheduleExpressionTimezone,omitempty"`
+	StartWindowMinutes         *int64             `json:"startWindowMinutes,omitempty"`
+	TargetBackupVaultName      *string            `json:"targetBackupVaultName,omitempty"`
+	// Reference field for TargetBackupVaultName
+	TargetBackupVaultRef                   *ackv1alpha1.AWSResourceReferenceWrapper `json:"targetBackupVaultRef,omitempty"`
+	TargetLogicallyAirGappedBackupVaultARN *string                                  `json:"targetLogicallyAirGappedBackupVaultARN,omitempty"`
+}
+
+// Defines a scanning action that specifies the malware scanner and scan mode
+// to use.
+type ScanAction struct {
+	MalwareScanner *string `json:"malwareScanner,omitempty"`
+	ScanMode       *string `json:"scanMode,omitempty"`
 }
 
 // Contains metadata about a scan job, including information about the scanning
@@ -438,26 +621,51 @@ type RuleInput struct {
 type ScanJob struct {
 	CompletionDate *metav1.Time `json:"completionDate,omitempty"`
 	CreationDate   *metav1.Time `json:"creationDate,omitempty"`
+	MalwareScanner *string      `json:"malwareScanner,omitempty"`
+	ScanMode       *string      `json:"scanMode,omitempty"`
 }
 
 // Contains summary information about scan jobs, including counts and metadata
 // for a specific time period and criteria.
 type ScanJobSummary struct {
-	EndTime   *metav1.Time `json:"endTime,omitempty"`
-	StartTime *metav1.Time `json:"startTime,omitempty"`
+	EndTime        *metav1.Time `json:"endTime,omitempty"`
+	MalwareScanner *string      `json:"malwareScanner,omitempty"`
+	ResourceType   *string      `json:"resourceType,omitempty"`
+	StartTime      *metav1.Time `json:"startTime,omitempty"`
 }
 
 // Contains the results of a security scan, including scanner information, scan
 // state, and any findings discovered.
 type ScanResult struct {
 	LastScanTimestamp *metav1.Time `json:"lastScanTimestamp,omitempty"`
+	MalwareScanner    *string      `json:"malwareScanner,omitempty"`
+}
+
+// Contains configuration settings for malware scanning, including the scanner
+// type, target resource types, and scanner role.
+type ScanSetting struct {
+	MalwareScanner *string   `json:"malwareScanner,omitempty"`
+	ResourceTypes  []*string `json:"resourceTypes,omitempty"`
+	ScannerRoleARN *string   `json:"scannerRoleARN,omitempty"`
 }
 
 // Contains information about a scheduled backup plan execution, including the
 // execution time, rule type, and associated rule identifier.
 type ScheduledPlanExecutionMember struct {
-	ExecutionTime *metav1.Time `json:"executionTime,omitempty"`
-	RuleID        *string      `json:"ruleID,omitempty"`
+	ExecutionTime     *metav1.Time `json:"executionTime,omitempty"`
+	RuleExecutionType *string      `json:"ruleExecutionType,omitempty"`
+	RuleID            *string      `json:"ruleID,omitempty"`
+}
+
+// Used to specify a set of resources to a backup plan.
+//
+// We recommend that you specify conditions, tags, or resources to include or
+// exclude. Otherwise, Backup attempts to select all supported and opted-in
+// storage resources, which could have unintended cost implications.
+//
+// For more information, see Assigning resources programmatically (https://docs.aws.amazon.com/aws-backup/latest/devguide/assigning-resources.html#assigning-resources-json).
+type Selection struct {
+	IAMRoleARN *string `json:"iamRoleARN,omitempty"`
 }
 
 // Contains metadata about a BackupSelection object.
@@ -465,6 +673,7 @@ type SelectionsListMember struct {
 	BackupPlanID     *string      `json:"backupPlanID,omitempty"`
 	CreationDate     *metav1.Time `json:"creationDate,omitempty"`
 	CreatorRequestID *string      `json:"creatorRequestID,omitempty"`
+	IAMRoleARN       *string      `json:"iamRoleARN,omitempty"`
 	SelectionID      *string      `json:"selectionID,omitempty"`
 }
 

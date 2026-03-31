@@ -72,6 +72,7 @@ rules:
 - apiGroups:
   - backup.services.k8s.aws
   resources:
+  - backupplans
   - backupvaults
   verbs:
   - create
@@ -84,6 +85,7 @@ rules:
 - apiGroups:
   - backup.services.k8s.aws
   resources:
+  - backupplans/status
   - backupvaults/status
   verbs:
   - get

@@ -40,6 +40,7 @@ import (
 	svctypes "github.com/aws-controllers-k8s/backup-controller/apis/v1alpha1"
 	svcresource "github.com/aws-controllers-k8s/backup-controller/pkg/resource"
 
+	_ "github.com/aws-controllers-k8s/backup-controller/pkg/resource/backup_plan"
 	_ "github.com/aws-controllers-k8s/backup-controller/pkg/resource/backup_vault"
 
 	"github.com/aws-controllers-k8s/backup-controller/pkg/version"
