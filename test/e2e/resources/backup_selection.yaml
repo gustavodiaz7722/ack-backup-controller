@@ -1,0 +1,10 @@
+apiVersion: backup.services.k8s.aws/v1alpha1
+kind: BackupSelection
+metadata:
+  name: $SELECTION_NAME
+spec:
+  name: $SELECTION_NAME
+  backupPlanID: $PLAN_ID
+  iamRoleARN: $IAM_ROLE_ARN
+  resources:
+    - "*"

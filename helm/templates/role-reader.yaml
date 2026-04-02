@@ -17,6 +17,7 @@ rules:
   - backup.services.k8s.aws
   resources:
   - backupplans
+  - backupselections
   - backupvaults
   verbs:
   - get

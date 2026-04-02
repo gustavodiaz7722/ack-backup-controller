@@ -72,6 +72,34 @@ type CalculatedLifecycle struct {
 	MoveToColdStorageAt *metav1.Time `json:"moveToColdStorageAt,omitempty"`
 }
 
+// Contains an array of triplets made up of a condition type (such as StringEquals),
+// a key, and a value. Used to filter resources using their tags and assign
+// them to a backup plan. Case sensitive.
+type Condition struct {
+	ConditionKey   *string `json:"conditionKey,omitempty"`
+	ConditionType  *string `json:"conditionType,omitempty"`
+	ConditionValue *string `json:"conditionValue,omitempty"`
+}
+
+// Includes information about tags you define to assign tagged resources to
+// a backup plan.
+//
+// Include the prefix aws:ResourceTag in your tags. For example, "aws:ResourceTag/TagKey1":
+// "Value1".
+type ConditionParameter struct {
+	ConditionKey   *string `json:"conditionKey,omitempty"`
+	ConditionValue *string `json:"conditionValue,omitempty"`
+}
+
+// Contains information about which resources to include or exclude from a backup
+// plan using their tags. Conditions are case sensitive.
+type Conditions struct {
+	StringEquals    []*ConditionParameter `json:"stringEquals,omitempty"`
+	StringLike      []*ConditionParameter `json:"stringLike,omitempty"`
+	StringNotEquals []*ConditionParameter `json:"stringNotEquals,omitempty"`
+	StringNotLike   []*ConditionParameter `json:"stringNotLike,omitempty"`
+}
+
 // The details of the copy operation.
 type CopyAction struct {
 	DestinationBackupVaultARN *string `json:"destinationBackupVaultARN,omitempty"`
@@ -468,7 +496,8 @@ type ReportSetting struct {
 // You can specify up to 5 different resource selections per tiering configuration.
 // Data moved to lower-cost tier remains there until deletion (one-way transition).
 type ResourceSelection struct {
-	ResourceType *string `json:"resourceType,omitempty"`
+	ResourceType *string   `json:"resourceType,omitempty"`
+	Resources    []*string `json:"resources,omitempty"`
 }
 
 // Contains information about a restore access backup vault.
@@ -665,7 +694,14 @@ type ScheduledPlanExecutionMember struct {
 //
 // For more information, see Assigning resources programmatically (https://docs.aws.amazon.com/aws-backup/latest/devguide/assigning-resources.html#assigning-resources-json).
 type Selection struct {
-	IAMRoleARN *string `json:"iamRoleARN,omitempty"`
+	// Contains information about which resources to include or exclude from a backup
+	// plan using their tags. Conditions are case sensitive.
+	Conditions    *Conditions  `json:"conditions,omitempty"`
+	IAMRoleARN    *string      `json:"iamRoleARN,omitempty"`
+	ListOfTags    []*Condition `json:"listOfTags,omitempty"`
+	NotResources  []*string    `json:"notResources,omitempty"`
+	Resources     []*string    `json:"resources,omitempty"`
+	SelectionName *string      `json:"selectionName,omitempty"`
 }
 
 // Contains metadata about a BackupSelection object.
@@ -675,6 +711,7 @@ type SelectionsListMember struct {
 	CreatorRequestID *string      `json:"creatorRequestID,omitempty"`
 	IAMRoleARN       *string      `json:"iamRoleARN,omitempty"`
 	SelectionID      *string      `json:"selectionID,omitempty"`
+	SelectionName    *string      `json:"selectionName,omitempty"`
 }
 
 // This contains metadata about a tiering configuration.

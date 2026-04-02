@@ -5,10 +5,13 @@ operations:
     input_wrapper_field_path: BackupPlan
   GetBackupPlan:
     output_wrapper_field_path: BackupPlan
+  CreateBackupSelection:
+    input_wrapper_field_path: BackupSelection
+  GetBackupSelection:
+    output_wrapper_field_path: BackupSelection
 
 ignore:
   resource_names:
-    - BackupSelection
     - Framework
     - LegalHold
     - LogicallyAirGappedBackupVault
@@ -159,3 +162,56 @@ resources:
       terminal_codes:
         - InvalidParameterValueException
         - MissingParameterValueException
+  BackupSelection:
+    ignore_idempotency_token: true
+    # No UpdateBackupSelection API — selections are immutable (create/delete only)
+    update_operation:
+      custom_method_name: customUpdateBackupSelection
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/backup_selection/sdk_create_post_build_request.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/backup_selection/sdk_delete_post_build_request.go.tpl
+      sdk_read_one_post_set_output:
+        template_path: hooks/backup_selection/sdk_read_one_post_set_output.go.tpl
+    fields:
+      ID:
+        is_primary_key: true
+      # BackupPlanId is outside the input_wrapper_field_path (BackupSelection),
+      # so it's not automatically flattened into the spec. Define as a custom
+      # field with type so it appears in the spec.
+      BackupPlanID:
+        is_immutable: true
+        is_required: true
+        type: string
+        references:
+          resource: BackupPlan
+          path: Status.ID
+      IamRoleARN:
+        references:
+          resource: Role
+          service_name: iam
+          path: Status.ACKResourceMetadata.ARN
+      Conditions:
+        late_initialize:
+          skip_incomplete_check: {}
+    renames:
+      operations:
+        CreateBackupSelection:
+          input_fields:
+            SelectionName: Name
+          output_fields:
+            SelectionId: ID
+        GetBackupSelection:
+          output_fields:
+            SelectionName: Name
+            SelectionId: ID
+    exceptions:
+      errors:
+        404:
+          code: ResourceNotFoundException
+      terminal_codes:
+        - InvalidParameterValueException
+        - MissingParameterValueException
+    tags:
+      ignore: true

@@ -16,6 +16,7 @@ import logging
 import boto3
 
 from acktest.bootstrapping import Resources, BootstrapFailureException
+from acktest.bootstrapping.iam import Role
 from acktest.bootstrapping.kms import Key
 
 from e2e import bootstrap_directory
@@ -26,6 +27,11 @@ def service_bootstrap() -> Resources:
 
     resources = BootstrapResources(
         KmsKey=Key(),
+        BackupRole=Role(
+            name_prefix="ack-backup-selection-role",
+            principal_service="backup.amazonaws.com",
+            managed_policies=["arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup"],
+        ),
     )
 
     try:

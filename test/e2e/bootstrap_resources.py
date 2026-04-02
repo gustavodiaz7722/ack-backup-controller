@@ -17,12 +17,14 @@ for them.
 
 from dataclasses import dataclass
 from acktest.bootstrapping import Resources
+from acktest.bootstrapping.iam import Role
 from acktest.bootstrapping.kms import Key
 from e2e import bootstrap_directory
 
 @dataclass
 class BootstrapResources(Resources):
     KmsKey: Key
+    BackupRole: Role
 
 _bootstrap_resources = None
 

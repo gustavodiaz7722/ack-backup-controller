@@ -73,6 +73,7 @@ rules:
   - backup.services.k8s.aws
   resources:
   - backupplans
+  - backupselections
   - backupvaults
   verbs:
   - create
@@ -86,11 +87,20 @@ rules:
   - backup.services.k8s.aws
   resources:
   - backupplans/status
+  - backupselections/status
   - backupvaults/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - iam.services.k8s.aws
+  resources:
+  - roles
+  - roles/status
+  verbs:
+  - get
+  - list
 - apiGroups:
   - kms.services.k8s.aws
   resources:
