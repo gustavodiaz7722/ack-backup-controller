@@ -259,13 +259,13 @@ func (rm *resourceManager) sdkCreate(
 	// spec, flip ResourceSynced=False so the reconciler loops back
 	// promptly, picks up the delta, and drives the sub-resource writes
 	// through sdkUpdate.
-	if desired.ko.Spec.AccessPolicy != nil {
-		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
-	}
 	if desired.ko.Spec.LockConfiguration != nil {
 		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
 	}
 	if desired.ko.Spec.Notifications != nil {
+		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
+	}
+	if desired.ko.Spec.AccessPolicy != nil {
 		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
 	}
 	return &resource{ko}, nil
@@ -307,12 +307,6 @@ func (rm *resourceManager) sdkUpdate(
 	}()
 
 	// Sync sub-resource managers for fields managed by separate API operations.
-	if delta.DifferentAt("Spec.LockConfiguration") {
-		mgr_lock_configuration := lock_configuration.NewManager(rm.sdkapi, rm.metrics)
-		if err = mgr_lock_configuration.Sync(ctx, desired.ko, latest.ko); err != nil {
-			return nil, err
-		}
-	}
 	if delta.DifferentAt("Spec.Notifications") {
 		mgr_notifications := notifications.NewManager(rm.sdkapi, rm.metrics)
 		if err = mgr_notifications.Sync(ctx, desired.ko, latest.ko); err != nil {
@@ -325,7 +319,13 @@ func (rm *resourceManager) sdkUpdate(
 			return nil, err
 		}
 	}
-	if !delta.DifferentExcept("Spec.LockConfiguration", "Spec.Notifications", "Spec.AccessPolicy") {
+	if delta.DifferentAt("Spec.LockConfiguration") {
+		mgr_lock_configuration := lock_configuration.NewManager(rm.sdkapi, rm.metrics)
+		if err = mgr_lock_configuration.Sync(ctx, desired.ko, latest.ko); err != nil {
+			return nil, err
+		}
+	}
+	if !delta.DifferentExcept("Spec.Notifications", "Spec.AccessPolicy", "Spec.LockConfiguration") {
 		return desired, nil
 	}
 	return rm.customUpdateBackupVault(ctx, desired, latest, delta)
@@ -346,19 +346,19 @@ func (rm *resourceManager) sdkDelete(
 	// For each sub-resource, sync with a nil/empty desired state so all
 	// items are deleted.
 	koCopy := r.ko.DeepCopy()
+	koCopy.Spec.Notifications = nil
 	koCopy.Spec.AccessPolicy = nil
 	koCopy.Spec.LockConfiguration = nil
-	koCopy.Spec.Notifications = nil
+	mgr_notifications := notifications.NewManager(rm.sdkapi, rm.metrics)
+	if err = mgr_notifications.Sync(ctx, koCopy, r.ko); err != nil {
+		return nil, err
+	}
 	mgr_access_policy := access_policy.NewManager(rm.sdkapi, rm.metrics)
 	if err = mgr_access_policy.Sync(ctx, koCopy, r.ko); err != nil {
 		return nil, err
 	}
 	mgr_lock_configuration := lock_configuration.NewManager(rm.sdkapi, rm.metrics)
 	if err = mgr_lock_configuration.Sync(ctx, koCopy, r.ko); err != nil {
-		return nil, err
-	}
-	mgr_notifications := notifications.NewManager(rm.sdkapi, rm.metrics)
-	if err = mgr_notifications.Sync(ctx, koCopy, r.ko); err != nil {
 		return nil, err
 	}
 	input, err := rm.newDeleteRequestPayload(r)

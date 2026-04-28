@@ -109,8 +109,6 @@ resources:
           path: VaultType
     sub_resources:
       AccessPolicy:
-        tags:
-          ignore: true
         fields:
           BackupVaultName:
             go_tag: json:"-"
@@ -120,12 +118,7 @@ resources:
         hooks:
           sdk_read_one_post_request:
             template_path: hooks/backup_vault_access_policy/sdk_read_one_post_request.go.tpl
-      # Notifications — SNS topic + event list managed via
-      # Put/Delete/GetBackupVaultNotifications. A singleton sub-resource:
-      # exactly one notification config per vault, addressed by BackupVaultName.
       Notifications:
-        tags:
-          ignore: true
         fields:
           BackupVaultName:
             go_tag: json:"-"
@@ -141,10 +134,6 @@ resources:
               output_fields:
                 BackupVaultEvents: Events
         hooks:
-          # GetBackupVaultNotifications returns ResourceNotFoundException
-          # both when the vault does not exist and when no notifications
-          # are configured. Translate into ackerr.NotFound so Get() clears
-          # the parent field instead of stalling the reconcile.
           sdk_read_one_post_request:
             template_path: hooks/backup_vault_notifications/sdk_read_one_post_request.go.tpl
       # LockConfiguration — vault lock settings managed via
@@ -152,8 +141,6 @@ resources:
       # There is no dedicated Get operation; lock state is read from
       # DescribeBackupVault via a custom find_operation.
       LockConfiguration:
-        tags:
-          ignore: true
         fields:
           BackupVaultName:
             go_tag: json:"-"
