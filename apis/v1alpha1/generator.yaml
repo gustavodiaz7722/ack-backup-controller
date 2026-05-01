@@ -9,37 +9,10 @@ operations:
     input_wrapper_field_path: BackupSelection
   GetBackupSelection:
     output_wrapper_field_path: BackupSelection
-  # BackupVault.AccessPolicy sub-resource operations. Binding these lets
-  # the generator route their input/output through the sub-resource CRD
-  # (BackupVaultAccessPolicy) rather than tying them to the parent.
-  PutBackupVaultAccessPolicy:
-    resource_name: AccessPolicy
-    operation_type: create
-  DeleteBackupVaultAccessPolicy:
-    resource_name: AccessPolicy
-    operation_type: delete
-  GetBackupVaultAccessPolicy:
-    resource_name: AccessPolicy
-    operation_type: get
-  # BackupVault.Notifications sub-resource operations.
-  PutBackupVaultNotifications:
-    resource_name: Notifications
-    operation_type: create
-  DeleteBackupVaultNotifications:
-    resource_name: Notifications
-    operation_type: delete
-  GetBackupVaultNotifications:
-    resource_name: Notifications
-    operation_type: get
-  # BackupVault.LockConfiguration sub-resource operations.
+  # BackupVault.LockConfiguration managed field operations.
   # There is no GetBackupVaultLockConfiguration — lock state is read from
-  # DescribeBackupVault via a custom find_operation.
-  PutBackupVaultLockConfiguration:
-    resource_name: LockConfiguration
-    operation_type: create
-  DeleteBackupVaultLockConfiguration:
-    resource_name: LockConfiguration
-    operation_type: delete
+  # DescribeBackupVault via a custom find_operation. Only Put and Delete
+  # are inferred automatically from the managed fields config.
 
 ignore:
   resource_names:
@@ -107,53 +80,40 @@ resources:
         from:
           operation: DescribeBackupVault
           path: VaultType
-    sub_resources:
+      # Managed fields — each has its own lifecycle via separate API operations.
+      # Operations and primary keys are auto-inferred from the parent.
       AccessPolicy:
-        fields:
-          BackupVaultName:
-            go_tag: json:"-"
-            is_primary_key: true
-            compare:
-              is_ignored: true
-        hooks:
-          sdk_read_one_post_request:
-            template_path: hooks/backup_vault_access_policy/sdk_read_one_post_request.go.tpl
+        manager:
+          hooks:
+            sdk_read_one_post_request:
+              template_path: hooks/backup_vault_access_policy/sdk_read_one_post_request.go.tpl
       Notifications:
-        fields:
-          BackupVaultName:
-            go_tag: json:"-"
-            is_primary_key: true
-            compare:
-              is_ignored: true
-        renames:
-          operations:
-            PutBackupVaultNotifications:
-              input_fields:
-                BackupVaultEvents: Events
-            GetBackupVaultNotifications:
-              output_fields:
-                BackupVaultEvents: Events
-        hooks:
-          sdk_read_one_post_request:
-            template_path: hooks/backup_vault_notifications/sdk_read_one_post_request.go.tpl
+        manager:
+          renames:
+            operations:
+              PutBackupVaultNotifications:
+                input_fields:
+                  BackupVaultEvents: Events
+              GetBackupVaultNotifications:
+                output_fields:
+                  BackupVaultEvents: Events
+          hooks:
+            sdk_read_one_post_request:
+              template_path: hooks/backup_vault_notifications/sdk_read_one_post_request.go.tpl
       # LockConfiguration — vault lock settings managed via
-      # Put/DeleteBackupVaultLockConfiguration. A singleton sub-resource.
+      # Put/DeleteBackupVaultLockConfiguration. A singleton managed field.
       # There is no dedicated Get operation; lock state is read from
       # DescribeBackupVault via a custom find_operation.
       LockConfiguration:
-        fields:
-          BackupVaultName:
-            go_tag: json:"-"
-            is_primary_key: true
-            compare:
-              is_ignored: true
-          # ChangeableForDays is write-only — not returned by DescribeBackupVault.
-          # Mark it ignored in compare so it doesn't cause perpetual drift.
-          ChangeableForDays:
-            compare:
-              is_ignored: true
-        find_operation:
-          custom_method_name: customFindLockConfiguration
+        manager:
+          fields:
+            # ChangeableForDays is write-only — not returned by DescribeBackupVault.
+            # Mark it ignored in compare so it doesn't cause perpetual drift.
+            ChangeableForDays:
+              compare:
+                is_ignored: true
+          find_operation:
+            custom_method_name: customFindLockConfiguration
     # There is no UpdateBackupVault API. Fields must be updated via separate APIs.
     update_operation:
       custom_method_name: customUpdateBackupVault

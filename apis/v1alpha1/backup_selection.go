@@ -71,10 +71,6 @@ type BackupSelectionSpec struct {
 	//
 	// If you specify multiple ARNs, the resources much match any of the ARNs (OR
 	// logic).
-	//
-	// When using wildcards in ARN patterns for backup selections, the asterisk
-	// (*) must appear at the end of the ARN string (prefix pattern). For example,
-	// arn:aws:s3:::my-bucket-* is valid, but arn:aws:s3:::*-logs is not supported.
 	Resources []*string `json:"resources,omitempty"`
 }
 

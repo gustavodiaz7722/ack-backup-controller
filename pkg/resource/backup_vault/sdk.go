@@ -52,8 +52,8 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
-	_ = access_policy.NewManager
 	_ = lock_configuration.NewManager
+	_ = access_policy.NewManager
 	_ = notifications.NewManager
 	_ = &aws.Config{}
 )
@@ -167,12 +167,12 @@ func (rm *resourceManager) sdkFind(
 		}
 	}
 
-	mgr_access_policy := access_policy.NewManager(rm.sdkapi, rm.metrics)
-	if err := mgr_access_policy.Get(ctx, ko); err != nil {
-		return nil, err
-	}
 	mgr_lock_configuration := lock_configuration.NewManager(rm.sdkapi, rm.metrics)
 	if err := mgr_lock_configuration.Get(ctx, ko); err != nil {
+		return nil, err
+	}
+	mgr_access_policy := access_policy.NewManager(rm.sdkapi, rm.metrics)
+	if err := mgr_access_policy.Get(ctx, ko); err != nil {
 		return nil, err
 	}
 	mgr_notifications := notifications.NewManager(rm.sdkapi, rm.metrics)
@@ -254,18 +254,18 @@ func (rm *resourceManager) sdkCreate(
 
 	rm.setStatusDefaults(ko)
 
-	// Sub-resources (fields managed by separate API operations) are not
+	// Managed fields (fields managed by separate API operations) are not
 	// applied by the parent's create call. If the user set any of them in
 	// spec, flip ResourceSynced=False so the reconciler loops back
-	// promptly, picks up the delta, and drives the sub-resource writes
+	// promptly, picks up the delta, and drives the managed field writes
 	// through sdkUpdate.
 	if desired.ko.Spec.LockConfiguration != nil {
 		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
 	}
-	if desired.ko.Spec.Notifications != nil {
+	if desired.ko.Spec.AccessPolicy != nil {
 		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
 	}
-	if desired.ko.Spec.AccessPolicy != nil {
+	if desired.ko.Spec.Notifications != nil {
 		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
 	}
 	return &resource{ko}, nil
@@ -306,10 +306,10 @@ func (rm *resourceManager) sdkUpdate(
 		exit(err)
 	}()
 
-	// Sync sub-resource managers for fields managed by separate API operations.
-	if delta.DifferentAt("Spec.Notifications") {
-		mgr_notifications := notifications.NewManager(rm.sdkapi, rm.metrics)
-		if err = mgr_notifications.Sync(ctx, desired.ko, latest.ko); err != nil {
+	// Sync field managers for fields managed by separate API operations.
+	if delta.DifferentAt("Spec.LockConfiguration") {
+		mgr_lock_configuration := lock_configuration.NewManager(rm.sdkapi, rm.metrics)
+		if err = mgr_lock_configuration.Sync(ctx, desired.ko, latest.ko); err != nil {
 			return nil, err
 		}
 	}
@@ -319,13 +319,13 @@ func (rm *resourceManager) sdkUpdate(
 			return nil, err
 		}
 	}
-	if delta.DifferentAt("Spec.LockConfiguration") {
-		mgr_lock_configuration := lock_configuration.NewManager(rm.sdkapi, rm.metrics)
-		if err = mgr_lock_configuration.Sync(ctx, desired.ko, latest.ko); err != nil {
+	if delta.DifferentAt("Spec.Notifications") {
+		mgr_notifications := notifications.NewManager(rm.sdkapi, rm.metrics)
+		if err = mgr_notifications.Sync(ctx, desired.ko, latest.ko); err != nil {
 			return nil, err
 		}
 	}
-	if !delta.DifferentExcept("Spec.Notifications", "Spec.AccessPolicy", "Spec.LockConfiguration") {
+	if !delta.DifferentExcept("Spec.LockConfiguration", "Spec.AccessPolicy", "Spec.Notifications") {
 		return desired, nil
 	}
 	return rm.customUpdateBackupVault(ctx, desired, latest, delta)
@@ -342,23 +342,23 @@ func (rm *resourceManager) sdkDelete(
 		exit(err)
 	}()
 
-	// Clean up sub-resources before deleting the parent resource.
-	// For each sub-resource, sync with a nil/empty desired state so all
+	// Clean up managed fields before deleting the parent resource.
+	// For each managed field, sync with a nil/empty desired state so all
 	// items are deleted.
 	koCopy := r.ko.DeepCopy()
-	koCopy.Spec.Notifications = nil
-	koCopy.Spec.AccessPolicy = nil
 	koCopy.Spec.LockConfiguration = nil
-	mgr_notifications := notifications.NewManager(rm.sdkapi, rm.metrics)
-	if err = mgr_notifications.Sync(ctx, koCopy, r.ko); err != nil {
+	koCopy.Spec.AccessPolicy = nil
+	koCopy.Spec.Notifications = nil
+	mgr_lock_configuration := lock_configuration.NewManager(rm.sdkapi, rm.metrics)
+	if err = mgr_lock_configuration.Sync(ctx, koCopy, r.ko); err != nil {
 		return nil, err
 	}
 	mgr_access_policy := access_policy.NewManager(rm.sdkapi, rm.metrics)
 	if err = mgr_access_policy.Sync(ctx, koCopy, r.ko); err != nil {
 		return nil, err
 	}
-	mgr_lock_configuration := lock_configuration.NewManager(rm.sdkapi, rm.metrics)
-	if err = mgr_lock_configuration.Sync(ctx, koCopy, r.ko); err != nil {
+	mgr_notifications := notifications.NewManager(rm.sdkapi, rm.metrics)
+	if err = mgr_notifications.Sync(ctx, koCopy, r.ko); err != nil {
 		return nil, err
 	}
 	input, err := rm.newDeleteRequestPayload(r)

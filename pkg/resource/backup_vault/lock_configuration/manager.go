@@ -138,8 +138,8 @@ func convertToResources(parent any) []resource {
 }
 
 // The singleton implementation (Get, convertFromParent, sync, key) follows.
-// key returns the primary key for a singleton sub-resource. There is at
-// most one sub-resource per parent, so the key is a constant; this causes
+// key returns the primary key for a singleton managed field. There is at
+// most one managed field per parent, so the key is a constant; this causes
 // computeDelta to route value changes through toUpdate instead of
 // toCreate+toDelete (which would wipe the item).
 func key(r *resource) string {
@@ -147,7 +147,7 @@ func key(r *resource) string {
 	return "_singleton"
 }
 
-// sync reconciles the singleton sub-resource. Since there can only be one
+// sync reconciles the singleton managed field. Since there can only be one
 // item per parent, computeDelta yields at most one entry in exactly one of
 // {toCreate, toUpdate, toDelete}; no iteration or batching is needed.
 func (rm *resourceManager) sync(ctx context.Context, d delta) error {
@@ -167,8 +167,8 @@ func (rm *resourceManager) sync(ctx context.Context, d delta) error {
 	return nil
 }
 
-// Get reads the current state of the sub-resource from AWS and writes the
-// result back onto the parent's injected sub-resource spec.
+// Get reads the current state of the managed field from AWS and writes the
+// result back onto the parent's injected spec field.
 func (rm *resourceManager) Get(
 	ctx context.Context,
 	parent *svcapitypes.BackupVault,
@@ -195,9 +195,9 @@ func (rm *resourceManager) Get(
 	return nil
 }
 
-// convertFromParent builds a single sub-resource instance from the parent.
-// The parent's injected field is copied wholesale into the sub-resource Spec,
-// then the parent's primary key is written into the sub-resource's primary
+// convertFromParent builds a single managed field instance from the parent.
+// The parent's injected field is copied wholesale into the managed field Spec,
+// then the parent's primary key is written into the managed field's primary
 // key field so the SDK call can identify the resource.
 func convertFromParent(parent *svcapitypes.BackupVault) []resource {
 	ko := &svcapitypes.LockConfiguration{}
